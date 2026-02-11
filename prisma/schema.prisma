@@ -6,3 +6,104 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  phone         String?  @unique
+  name          String
+  photoUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  circles       CircleMember[]
+  alerts        Alert[]
+  journeys      Journey[]
+  checkIns      CheckIn[]
+  locations     Location[]
+}
+
+model Circle {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  
+  members     CircleMember[]
+  alerts      Alert[]
+}
+
+model CircleMember {
+  id        String   @id @default(uuid())
+  circleId  String
+  userId    String
+  role      String   // admin, member
+  joinedAt  DateTime @default(now())
+  
+  circle    Circle   @relation(fields: [circleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@unique([circleId, userId])
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  userId      String
+  circleId    String
+  type        String   // sos, journey_delayed, check_in_missed
+  status      String   // active, resolved, cancelled
+  message     String?
+  latitude    Float
+  longitude   Float
+  address     String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  
+  user        User     @relation(fields: [userId], references: [id])
+  circle      Circle   @relation(fields: [circleId], references: [id])
+}
+
+model Journey {
+  id            String   @id @default(uuid())
+  userId        String
+  circleId      String?
+  startLat      Float
+  startLng      Float
+  startAddress  String
+  endLat        Float?
+  endLng        Float?
+  endAddress    String?
+  status        String   // planning, active, completed, emergency
+  startTime     DateTime
+  expectedEnd   DateTime?
+  actualEnd     DateTime?
+  
+  user          User       @relation(fields: [userId], references: [id])
+  waypoints     Location[]
+}
+
+model CheckIn {
+  id          String   @id @default(uuid())
+  userId      String
+  circleId    String
+  scheduledAt DateTime
+  confirmedAt DateTime?
+  status      String   // pending, confirmed, missed
+  message     String?
+  
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Location {
+  id         String   @id @default(uuid())
+  userId     String
+  journeyId  String?
+  latitude   Float
+  longitude  Float
+  accuracy   Float?
+  timestamp  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id])
+  journey    Journey? @relation(fields: [journeyId], references: [id])
+}
