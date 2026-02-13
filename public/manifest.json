@@ -1,10 +1,11 @@
 {
     "name": "SafeCircle",
     "short_name": "SafeCircle",
-    "start_url": "/",
+    "description": "Discreet safety network for women",
+    "start_url": "/dashboard",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#000000",
+    "theme_color": "#ec4899",
     "icons": [
         {
             "src": "/icons/icon-192.png",
