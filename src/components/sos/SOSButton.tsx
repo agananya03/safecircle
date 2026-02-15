@@ -27,6 +27,7 @@ export function SOSButton({
     const [status, setStatus] = useState<"idle" | "countdown" | "triggering" | "active">("idle");
     const [timeLeft, setTimeLeft] = useState(duration);
     const [alertId, setAlertId] = useState<string | null>(null);
+    const [currentAddress, setCurrentAddress] = useState<string | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Location Hook
@@ -96,6 +97,7 @@ export function SOSButton({
 
             // Reverse Geocode
             const { address } = await reverseGeocode(latitude, longitude);
+            setCurrentAddress(address);
 
             // Call API
             const response = await fetch('/api/alerts/trigger', {
@@ -249,24 +251,52 @@ export function SOSButton({
                 {status === "active" && (
                     <motion.div
                         key="active"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: "spring" }}
-                        className="flex flex-col items-center gap-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 text-white backdrop-blur-sm"
                     >
                         <motion.div
-                            animate={{ scale: [1, 1.1, 1] }}
-                            transition={{ repeat: Infinity, duration: 1.5 }}
-                            className="flex h-24 w-24 items-center justify-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/50"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", delay: 0.1 }}
+                            className="flex flex-col items-center gap-8 p-6 text-center"
                         >
-                            <span className="font-bold text-center text-sm px-2">SOS SENT</span>
+                            {/* Pulsing Alarm Icon */}
+                            <div className="relative">
+                                <motion.div
+                                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                                    transition={{ repeat: Infinity, duration: 2 }}
+                                    className="absolute inset-0 rounded-full bg-red-500 blur-xl"
+                                />
+                                <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-red-600 shadow-2xl shadow-red-500/50">
+                                    <AlertTriangle className="h-16 w-16 text-white" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <h2 className="text-4xl font-black tracking-tighter text-red-500">SOS SENT</h2>
+                                <p className="text-lg text-gray-300">Help is on the way.</p>
+                            </div>
+
+                            {/* Location Display */}
+                            {alertId && (
+                                <div className="max-w-xs rounded-lg bg-gray-800/50 p-4 border border-gray-700">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Current Location</p>
+                                    <p className="text-sm font-medium text-white break-words">
+                                        {currentAddress || `${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
+                                    </p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={resolveSOS}
+                                className="group relative mt-8 flex items-center gap-3 rounded-full bg-white px-8 py-4 text-black transition-transform active:scale-95"
+                            >
+                                <span className="text-lg font-bold">I&apos;M SAFE</span>
+                                <div className="absolute inset-0 -z-10 rounded-full bg-white/20 blur transition-opacity group-hover:opacity-100 opacity-0" />
+                            </button>
                         </motion.div>
-                        <button
-                            onClick={resolveSOS}
-                            className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-gray-800"
-                        >
-                            I'M SAFE
-                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
