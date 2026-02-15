@@ -50,7 +50,7 @@ model CircleMember {
 model Alert {
   id          String   @id @default(uuid())
   userId      String
-  circleId    String
+  circleId    String?
   type        String   // sos, journey_delayed, check_in_missed
   status      String   // active, resolved, cancelled
   message     String?
@@ -61,7 +61,7 @@ model Alert {
   resolvedAt  DateTime?
   
   user        User     @relation(fields: [userId], references: [id])
-  circle      Circle   @relation(fields: [circleId], references: [id])
+  circle      Circle?  @relation(fields: [circleId], references: [id])
 }
 
 model Journey {

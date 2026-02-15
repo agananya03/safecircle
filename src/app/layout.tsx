@@ -1,3 +1,4 @@
+import { SOSButton } from "@/components/sos/SOSButton";
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <SOSButton />
         </AuthProvider>
       </body>
     </html>
