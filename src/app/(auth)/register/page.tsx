@@ -21,6 +21,14 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
 
+        // Simple email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast.error("Please enter a valid email address.");
+            setLoading(false);
+            return;
+        }
+
         try {
             const { data, error } = await supabase.auth.signUp({
                 email,
@@ -29,7 +37,6 @@ export default function RegisterPage() {
                     data: {
                         full_name: name,
                     },
-                    emailRedirectTo: `${location.origin}/auth/callback`,
                 },
             });
 
@@ -38,11 +45,15 @@ export default function RegisterPage() {
                 return;
             }
 
-            if (data.user) {
-                // Here you would typically also create the user in your Prisma database if you strictly syncing
-                // For now, we rely on Supabase Auth.
-                toast.success('Registration successful! Please check your email.');
-                router.push('/verify');
+            if (data.session) {
+                // User is signed in immediately (verification disabled)
+                toast.success('Registration successful!');
+                router.push('/dashboard');
+                router.refresh();
+            } else if (data.user) {
+                // User created but needs verification (if enabled)
+                toast.success('Registration successful! If you have verification enabled, checks your email.');
+                // We don't force redirect to verify page anymore, just in case they want to try logging in
             }
         } catch (error) {
             console.error(error);

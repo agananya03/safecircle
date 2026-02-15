@@ -4,8 +4,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getCurrentLocation } from "@/lib/location/tracker";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { reverseGeocode } from "@/lib/location/geocoding";
 import { toast } from "sonner"; // Assuming sonner is used based on package.json
+
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SOSButtonProps {
     onTrigger?: () => void;
@@ -20,10 +23,17 @@ export function SOSButton({
     duration = 5,
     className,
 }: SOSButtonProps) {
+    const { user } = useAuth();
     const [status, setStatus] = useState<"idle" | "countdown" | "triggering" | "active">("idle");
     const [timeLeft, setTimeLeft] = useState(duration);
     const [alertId, setAlertId] = useState<string | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Location Hook
+    const { latitude, longitude, accuracy, error: locationError } = useGeolocation({
+        enableHighAccuracy: true,
+        timeout: 10000
+    });
 
     // Haptic feedback helper
     const vibrate = useCallback((pattern: number | number[]) => {
@@ -68,24 +78,42 @@ export function SOSButton({
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
+
+        if (!user) {
+            setStatus("idle");
+            toast.error("You must be logged in to send an SOS!");
+            return;
+        }
+
         setStatus("triggering");
 
         try {
-            // Get Location
-            const location = await getCurrentLocation();
+            // Use location from hook if available, otherwise fail
+            if (!latitude || !longitude) {
+                if (locationError) throw new Error(locationError);
+                throw new Error("Location not available yet.");
+            }
+
+            // Reverse Geocode
+            const { address } = await reverseGeocode(latitude, longitude);
 
             // Call API
             const response = await fetch('/api/alerts/trigger', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Ensure cookies are sent
                 body: JSON.stringify({
-                    latitude: location.latitude,
-                    longitude: location.longitude,
+                    latitude,
+                    longitude,
+                    address,
                     message: "SOS Alert Triggered"
                 })
             });
 
-            if (!response.ok) throw new Error('Failed to send SOS');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to send SOS: ${response.status}`);
+            }
 
             const data = await response.json();
             setAlertId(data.id);
@@ -93,10 +121,10 @@ export function SOSButton({
             vibrate([500, 200, 500]); // Success/Active haptic pattern
             onTrigger?.();
             toast.success("SOS Alert Sent! Help is on the way.");
-        } catch (error) {
+        } catch (error: any) {
             console.error("SOS Error:", error);
             setStatus("idle"); // or error state?
-            toast.error("Failed to send SOS. Please call emergency services directly.");
+            toast.error(error.message || "Failed to send SOS.");
             vibrate([100, 50, 100, 50, 100]); // Error haptic
         }
     };
@@ -129,6 +157,14 @@ export function SOSButton({
         };
     }, []);
 
+    // Status Indicator Helper
+    const getLocationStatus = () => {
+        if (locationError) return <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 border-2 border-white shadow-sm" title="Location Error" />;
+        if (!latitude) return <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-yellow-400 border-2 border-white animate-pulse shadow-sm" title="Acquiring Location..." />;
+        if (accuracy && accuracy < 50) return <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-white shadow-sm" title="High Accuracy" />;
+        return <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-300 border-2 border-white shadow-sm" title="Location Ready" />;
+    };
+
     return (
         <div className={cn("fixed bottom-6 right-6 z-50", className)}>
             <AnimatePresence mode="wait">
@@ -144,6 +180,7 @@ export function SOSButton({
                         className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-lg shadow-red-500/30 transition-colors hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/50"
                         aria-label="SOS Button"
                     >
+                        {getLocationStatus()}
                         <div className="absolute inset-0 -z-10 animate-ping rounded-full bg-red-500 opacity-20 group-hover:opacity-40" />
                         <AlertTriangle className="h-8 w-8" strokeWidth={2.5} />
                         <span className="sr-only">Activate SOS</span>
