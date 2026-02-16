@@ -1,12 +1,11 @@
+
 import { createClient } from '@/lib/supabase/server';
 import prisma from '@/lib/prisma/client';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
     try {
-
         const supabase = await createClient();
-
         const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         if (authError || !user) {
@@ -21,21 +20,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Location required' }, { status: 400 });
         }
 
-        // Ensure user exists locally (Lazy Sync) to prevent foreign key errors
-        // Use upsert to handle race conditions where user might be created between check and create
+        // Upsert user to ensure they exist in local DB
         try {
             await prisma.user.upsert({
                 where: { id: user.id },
-                update: {}, // No changes if exists
+                update: {},
                 create: {
                     id: user.id,
                     email: user.email!,
                     name: user.user_metadata.full_name || 'Unknown User',
+                    // phone: user.phone 
                 },
             });
-        } catch (userSyncError) {
-            console.error('Error syncing user:', userSyncError);
-            // Proceeding might fail if upsert completely failed, but usually it succeeds.
+        } catch (e) {
+            console.error("User sync error", e);
         }
 
         // Create the alert
@@ -49,7 +47,38 @@ export async function POST(request: Request) {
                 address,
                 message: message || 'SOS triggered',
             },
+            include: {
+                user: true // Include user details for the notification
+            }
         });
+
+        // Fetch user's circles to broadcast
+        const memberships = await prisma.circleMember.findMany({
+            where: { userId: user.id },
+            select: { circleId: true }
+        });
+
+        // Broadcast to each circle
+        const origin = new URL(request.url).origin;
+
+        // We use Promise.allSettled to ensure one failure doesn't stop others/return error
+        await Promise.allSettled(memberships.map(async ({ circleId }) => {
+            try {
+                await fetch(`${origin}/api/socket/notify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        room: circleId,
+                        event: 'alert:new',
+                        data: alert
+                    })
+                });
+            } catch (error) {
+                console.error(`Failed to broadcast to circle ${circleId}:`, error);
+            }
+        }));
 
         return NextResponse.json(alert);
     } catch (error) {

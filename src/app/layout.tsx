@@ -1,6 +1,8 @@
 import { SOSButton } from "@/components/sos/SOSButton";
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/components/providers/SocketProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,8 +24,11 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          {children}
-          <SOSButton />
+          <SocketProvider>
+            {children}
+            <SOSButton />
+            <Toaster />
+          </SocketProvider>
         </AuthProvider>
       </body>
     </html>
