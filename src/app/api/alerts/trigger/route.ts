@@ -62,9 +62,11 @@ export async function POST(request: Request) {
         const origin = new URL(request.url).origin;
 
         // We use Promise.allSettled to ensure one failure doesn't stop others/return error
+        // We use Promise.allSettled to ensure one failure doesn't stop others/return error
         await Promise.allSettled(memberships.map(async ({ circleId }) => {
             try {
-                await fetch(`${origin}/api/socket/notify`, {
+                // 1. Socket.io Broadcast
+                fetch(`${origin}/api/socket/notify`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -74,7 +76,58 @@ export async function POST(request: Request) {
                         event: 'alert:new',
                         data: alert
                     })
-                });
+                }).catch(e => console.error(`Socket broadcast failed for circle ${circleId}`, e));
+
+                // 2. Push Notifications (FCM)
+                // Get all members of this circle (except sender)
+                const circleMembers = await prisma.circleMember.findMany({
+                    where: {
+                        circleId,
+                        userId: { not: user.id }
+                    },
+                    select: {
+                        userId: true,
+                        // We need to fetch the User's fcmToken. 
+                        // But CircleMember doesn't strictly link to User fields in select unless included.
+                        // Let's use include or just separate query if needed. 
+                        // Actually select: { user: { select: { fcmToken: true } } } works.
+                        user: {
+                            select: {
+                                fcmToken: true
+                            }
+                        }
+                    }
+                }) as any;
+
+                const tokens = circleMembers
+                    .map((m: any) => m.user?.fcmToken)
+                    .filter((t: any) => t);
+
+                if (tokens.length > 0) {
+                    const { firebaseAdmin } = await import('@/lib/firebase/admin');
+                    if (firebaseAdmin) {
+                        try {
+                            const message = {
+                                notification: {
+                                    title: 'SOS Alert!',
+                                    body: `${user.user_metadata.full_name || 'Someone'} needs help!`,
+                                },
+                                tokens: tokens,
+                                data: {
+                                    alertId: alert.id,
+                                    type: 'sos'
+                                }
+                            };
+
+                            // SendMulticast
+                            const response = await firebaseAdmin.messaging().sendEachForMulticast(message);
+                            console.log('FCM generic send success count:', response.successCount);
+                        } catch (fcmError) {
+                            console.error("FCM Send Error:", fcmError);
+                        }
+                    }
+                }
+
             } catch (error) {
                 console.error(`Failed to broadcast to circle ${circleId}:`, error);
             }

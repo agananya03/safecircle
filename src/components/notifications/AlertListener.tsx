@@ -32,11 +32,25 @@ export function AlertListener() {
             console.log("Received alert:", data);
 
             // 1. Play Sound (Browser policy might block autoplay without interaction, but worth a try)
+            // 1. Play Sound
             try {
-                const audio = new Audio("/sounds/alert.mp3"); // We need to add this file or use a data URI
-                audio.play().catch(e => console.warn("Audio autoplay blocked by browser:", e));
+                const audio = new Audio("/sounds/alert.mp3");
+
+                // For SOS, loop the sound a few times or play a longer one? 
+                // For now, just play it.
+                audio.volume = 1.0;
+
+                const playPromise = audio.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        console.warn("Audio autoplay blocked by browser:", e);
+                        // Interaction required. We could show a button to "Enable Sound" 
+                        // but for critical alerts native toast might be better if supported.
+                    });
+                }
             } catch (e) {
-                // Fallback or ignore
+                console.error("Error playing sound", e);
             }
 
             // 2. Vibrate

@@ -23,8 +23,14 @@ const useFcmToken = () => {
 
                         if (currentToken) {
                             setToken(currentToken);
-                            // TODO: Send this token to backend to associate with user
+                            // Send this token to backend to associate with user
                             console.log('FCM Token:', currentToken);
+                            try {
+                                const { saveFcmToken } = await import('@/app/(dashboard)/notifications/actions');
+                                await saveFcmToken(currentToken);
+                            } catch (err) {
+                                console.error("Error saving FCM token:", err);
+                            }
                         } else {
                             console.log('No registration token available. Request permission to generate one.');
                         }

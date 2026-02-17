@@ -1,6 +1,7 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -15,6 +16,7 @@ model User {
   photoUrl      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  fcmToken      String?
   
   circles       CircleMember[]
   alerts        Alert[]

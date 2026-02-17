@@ -27,7 +27,7 @@ export default function RootLayout({
           <SocketProvider>
             {children}
             <SOSButton />
-            <Toaster />
+            <Toaster closeButton />
           </SocketProvider>
         </AuthProvider>
       </body>
