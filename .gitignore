@@ -42,3 +42,4 @@ next-env.d.ts
 
 # Firebase
 src/config/firebase-admin.json
+public/firebase-messaging-sw.js

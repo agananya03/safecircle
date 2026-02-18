@@ -1,14 +1,21 @@
-/* eslint-disable no-undef */
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file
+dotenv.config();
+
+const swContent = `/* eslint-disable no-undef */
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 // Initialize the Firebase app in the service worker by passing in the
 // messagingSenderId.
 firebase.initializeApp({
-    apiKey: "AIzaSyC6bqA7robwp198q_TV5-UP8Gb7dCmsl34",
-    projectId: "safecircle-23ade",
-    messagingSenderId: "1073253699230",
-    appId: "1:1073253699230:web:af19c32197c06fc127358f"
+    apiKey: "${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}",
+    projectId: "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}",
+    messagingSenderId: "${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
+    appId: "${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background
@@ -27,3 +34,15 @@ messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(notificationTitle,
         notificationOptions);
 });
+`;
+
+const publicDir = path.join(__dirname, '..', 'public');
+const swPath = path.join(publicDir, 'firebase-messaging-sw.js');
+
+// Ensure public directory exists
+if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+}
+
+fs.writeFileSync(swPath, swContent);
+console.log(`Generated ${swPath}`);
