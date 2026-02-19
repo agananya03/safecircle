@@ -39,7 +39,8 @@ interface Circle {
 }
 
 export default function CircleDetailPage() {
-    const { id } = useParams();
+    const params = useParams();
+    const id = params?.id as string;
     const { user } = useAuth();
     const router = useRouter();
     const [circle, setCircle] = useState<Circle | null>(null);

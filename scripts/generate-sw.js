@@ -34,6 +34,24 @@ messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(notificationTitle,
         notificationOptions);
 });
+
+// Cache map tiles
+self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+    if (url.origin === 'https://tile.openstreetmap.org') {
+        event.respondWith(
+            caches.open('map-tiles').then((cache) => {
+                return cache.match(event.request).then((response) => {
+                    const fetchPromise = fetch(event.request).then((networkResponse) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                    return response || fetchPromise;
+                });
+            })
+        );
+    }
+});
 `;
 
 const publicDir = path.join(__dirname, '..', 'public');

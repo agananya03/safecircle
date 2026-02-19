@@ -18,6 +18,10 @@ const settingsNav = [
         title: "Notifications",
         href: "/notifications",
     },
+    {
+        title: "Map",
+        href: "/map",
+    },
 ]
 
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {

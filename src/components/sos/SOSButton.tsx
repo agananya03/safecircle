@@ -9,6 +9,7 @@ import { reverseGeocode } from "@/lib/location/geocoding";
 import { toast } from "sonner"; // Assuming sonner is used based on package.json
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocationTracker } from "@/hooks/useLocationTracker";
 
 interface SOSButtonProps {
     onTrigger?: () => void;
@@ -29,6 +30,13 @@ export function SOSButton({
     const [alertId, setAlertId] = useState<string | null>(null);
     const [currentAddress, setCurrentAddress] = useState<string | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Location Tracking Hook for SOS
+    const { startTracking, stopTracking } = useLocationTracker({
+        interval: 10000, // Update every 10s during SOS
+        enableHighAccuracy: true,
+        autoStart: false
+    });
 
     // Location Hook
     const { latitude, longitude, accuracy, error: locationError } = useGeolocation({
@@ -152,12 +160,25 @@ export function SOSButton({
         }
     };
 
+
+
+    // ... existing code ...
+
+    useEffect(() => {
+        if (status === "active" || status === "triggering") {
+            startTracking();
+        } else {
+            stopTracking();
+        }
+    }, [status, startTracking, stopTracking]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
+            stopTracking();
         };
-    }, []);
+    }, [stopTracking]);
 
     // Status Indicator Helper
     const getLocationStatus = () => {
@@ -286,6 +307,11 @@ export function SOSButton({
                                     <p className="text-sm font-medium text-white break-words">
                                         {currentAddress || `${latitude?.toFixed(4)}, ${longitude?.toFixed(4)}`}
                                     </p>
+                                    {accuracy && accuracy > 50 && (
+                                        <p className="mt-2 text-xs text-yellow-500 font-semibold border-t border-gray-700 pt-2">
+                                            ⚠ GPS Accuracy: ±{Math.round(accuracy)}m
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -296,10 +322,20 @@ export function SOSButton({
                                 <span className="text-lg font-bold">I&apos;M SAFE</span>
                                 <div className="absolute inset-0 -z-10 rounded-full bg-white/20 blur transition-opacity group-hover:opacity-100 opacity-0" />
                             </button>
+
+                            {/* View Map Link */}
+                            {alertId && (
+                                <a
+                                    href={`/alerts/${alertId}`}
+                                    className="mt-4 text-sm font-medium text-red-300 hover:text-white hover:underline transition-colors"
+                                >
+                                    View Live Map & Details
+                                </a>
+                            )}
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

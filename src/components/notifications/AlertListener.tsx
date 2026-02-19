@@ -78,7 +78,7 @@ export function AlertListener() {
                     action: {
                         label: "View Location",
                         onClick: () => {
-                            window.location.href = `/dashboard/map?alertId=${data.id}`;
+                            window.location.href = `/alerts/${data.id}`;
                         },
                     },
                 }
