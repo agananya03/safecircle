@@ -34,6 +34,7 @@ model Circle {
   
   members     CircleMember[]
   alerts      Alert[]
+  journeys    Journey[]
 }
 
 model CircleMember {
@@ -69,7 +70,7 @@ model Alert {
 model Journey {
   id            String   @id @default(uuid())
   userId        String
-  circleId      String?
+  // circleId removed in favor of many-to-many 'circles'
   startLat      Float
   startLng      Float
   startAddress  String
@@ -77,11 +78,13 @@ model Journey {
   endLng        Float?
   endAddress    String?
   status        String   // planning, active, completed, emergency
-  startTime     DateTime
+  startTime     DateTime @default(now())
   expectedEnd   DateTime?
   actualEnd     DateTime?
+  note          String?
   
   user          User       @relation(fields: [userId], references: [id])
+  circles       Circle[]
   waypoints     Location[]
 }
 
