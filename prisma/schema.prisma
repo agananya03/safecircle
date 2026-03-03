@@ -35,6 +35,7 @@ model Circle {
   members     CircleMember[]
   alerts      Alert[]
   journeys    Journey[]
+  checkIns    CheckIn[]
 }
 
 model CircleMember {
@@ -91,13 +92,14 @@ model Journey {
 model CheckIn {
   id          String   @id @default(uuid())
   userId      String
-  circleId    String
+  // circleId removed for m-n
   scheduledAt DateTime
   confirmedAt DateTime?
   status      String   // pending, confirmed, missed
   message     String?
   
   user        User     @relation(fields: [userId], references: [id])
+  circles     Circle[]
 }
 
 model Location {

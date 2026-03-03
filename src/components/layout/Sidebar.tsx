@@ -22,6 +22,10 @@ const settingsNav = [
         title: "Map",
         href: "/map",
     },
+    {
+        title: "Fake Call Settings",
+        href: "/fake-call",
+    },
 ]
 
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {

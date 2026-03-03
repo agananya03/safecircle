@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { FakeCallOverlay } from "@/components/fake-call/FakeCallOverlay";
+import { FakeCallActive } from "@/components/fake-call/FakeCallActive";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +29,8 @@ export default function RootLayout({
           <SocketProvider>
             {children}
             <SOSButton />
+            <FakeCallOverlay />
+            <FakeCallActive />
             <Toaster closeButton />
           </SocketProvider>
         </AuthProvider>

@@ -27,6 +27,7 @@ interface Journey {
     endLat?: number;
     endLng?: number;
     waypoints: { latitude: number; longitude: number }[];
+    note?: string | null;
 }
 
 export default function JourneyHistory() {
