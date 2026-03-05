@@ -83,8 +83,23 @@ export default function FakeCallSettingsPage() {
         store.triggerCall();
     };
 
-    const handleSchedule = () => {
+    const handleSchedule = async () => {
         const ms = parseInt(timerValue) * 1000;
+
+        try {
+            const res = await fetch('/api/fake-call/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ delayMs: ms }),
+            });
+
+            if (!res.ok) {
+                console.error('Failed to register schedule with server');
+            }
+        } catch (error) {
+            console.error('Error scheduling with server:', error);
+        }
+
         store.scheduleCall(ms);
         toast.success(`Fake call scheduled in ${timerValue} seconds. You can minimize the app.`);
     };

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSocketContext } from "@/components/providers/SocketProvider";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -19,6 +19,16 @@ interface AlertData {
 export function AlertListener() {
     const { socket } = useSocketContext();
     const { user } = useAuth();
+    const [isStealth, setIsStealth] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            fetch('/api/user/settings')
+                .then(res => res.json())
+                .then(data => setIsStealth(data.stealthMode))
+                .catch(console.error);
+        }
+    }, [user]);
 
     useEffect(() => {
         if (!socket) return;
@@ -31,7 +41,11 @@ export function AlertListener() {
 
             console.log("Received alert:", data);
 
-            // 1. Play Sound (Browser policy might block autoplay without interaction, but worth a try)
+            if (isStealth) {
+                console.log("Stealth mode active: Suppressing alert notifications.");
+                return;
+            }
+
             // 1. Play Sound
             try {
                 const audio = new Audio("/sounds/alert.mp3");
@@ -90,7 +104,7 @@ export function AlertListener() {
         return () => {
             socket.off("alert:new", handleNewAlert);
         };
-    }, [socket, user]);
+    }, [socket, user, isStealth]);
 
     return null;
 }

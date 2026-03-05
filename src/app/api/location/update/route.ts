@@ -29,10 +29,16 @@ export async function POST(request: Request) {
             }
         });
 
-        // 2. Broadcast to circles
-        // Fetch user's circles
+        // 2. Broadcast to circles where location sharing is enabled
         const memberships = await prisma.circleMember.findMany({
-            where: { userId: user.id },
+            where: {
+                userId: user.id,
+                shareLocation: true,
+                OR: [
+                    { locationShareExpiresAt: null },
+                    { locationShareExpiresAt: { gt: new Date() } }
+                ]
+            },
             select: { circleId: true }
         });
 

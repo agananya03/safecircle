@@ -1,7 +1,7 @@
-
 import { createClient } from '@/lib/supabase/server';
 import prisma from '@/lib/prisma/client';
 import { NextResponse } from 'next/server';
+import { sendSms } from '@/lib/twilio';
 
 export async function POST(request: Request) {
     try {
@@ -21,8 +21,9 @@ export async function POST(request: Request) {
         }
 
         // Upsert user to ensure they exist in local DB
+        let localUser;
         try {
-            await prisma.user.upsert({
+            localUser = await prisma.user.upsert({
                 where: { id: user.id },
                 update: {},
                 create: {
@@ -35,6 +36,12 @@ export async function POST(request: Request) {
         } catch (e) {
             console.error("User sync error", e);
         }
+
+        // Fetch user with SMS prefs and Emergency Contacts
+        const fullUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: { emergencyContacts: true }
+        });
 
         // Create the alert
         const alert = await prisma.alert.create({
@@ -62,7 +69,6 @@ export async function POST(request: Request) {
         const origin = new URL(request.url).origin;
 
         // We use Promise.allSettled to ensure one failure doesn't stop others/return error
-        // We use Promise.allSettled to ensure one failure doesn't stop others/return error
         await Promise.allSettled(memberships.map(async ({ circleId }) => {
             try {
                 // 1. Socket.io Broadcast
@@ -87,10 +93,6 @@ export async function POST(request: Request) {
                     },
                     select: {
                         userId: true,
-                        // We need to fetch the User's fcmToken. 
-                        // But CircleMember doesn't strictly link to User fields in select unless included.
-                        // Let's use include or just separate query if needed. 
-                        // Actually select: { user: { select: { fcmToken: true } } } works.
                         user: {
                             select: {
                                 fcmToken: true
@@ -107,7 +109,7 @@ export async function POST(request: Request) {
                     const { firebaseAdmin } = await import('@/lib/firebase/admin');
                     if (firebaseAdmin) {
                         try {
-                            const message = {
+                            const fcmMessage = {
                                 notification: {
                                     title: 'SOS Alert!',
                                     body: `${user.user_metadata.full_name || 'Someone'} needs help!`,
@@ -120,7 +122,7 @@ export async function POST(request: Request) {
                             };
 
                             // SendMulticast
-                            const response = await firebaseAdmin.messaging().sendEachForMulticast(message);
+                            const response = await firebaseAdmin.messaging().sendEachForMulticast(fcmMessage);
                             console.log('FCM generic send success count:', response.successCount);
                         } catch (fcmError) {
                             console.error("FCM Send Error:", fcmError);
@@ -132,6 +134,20 @@ export async function POST(request: Request) {
                 console.error(`Failed to broadcast to circle ${circleId}:`, error);
             }
         }));
+
+        // 3. Dispatch SMS to Emergency Contacts if enabled
+        if (fullUser?.smsEnabled && fullUser.emergencyContacts && fullUser.emergencyContacts.length > 0) {
+            const userName = user.user_metadata.full_name || 'Someone';
+            const mapsLink = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+            const smsBody = `SAFE_CIRCLE EMERGENCY: ${userName} has triggered an SOS alert! Location: ${address ? address + ' - ' : ''}${mapsLink}`;
+
+            await Promise.allSettled(fullUser.emergencyContacts.map(async (contact) => {
+                await sendSms({
+                    to: contact.phone,
+                    body: smsBody
+                });
+            }));
+        }
 
         return NextResponse.json(alert);
     } catch (error) {

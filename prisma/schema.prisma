@@ -17,12 +17,16 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   fcmToken      String?
+  smsEnabled    Boolean  @default(false)
+  stealthMode   Boolean  @default(false)
   
   circles       CircleMember[]
   alerts        Alert[]
   journeys      Journey[]
   checkIns      CheckIn[]
   locations     Location[]
+  emergencyContacts EmergencyContact[]
+  messages      Message[]
 }
 
 model Circle {
@@ -36,6 +40,7 @@ model Circle {
   alerts      Alert[]
   journeys    Journey[]
   checkIns    CheckIn[]
+  messages    Message[]
 }
 
 model CircleMember {
@@ -43,6 +48,8 @@ model CircleMember {
   circleId  String
   userId    String
   role      String   // admin, member
+  shareLocation          Boolean @default(true)
+  locationShareExpiresAt DateTime?
   joinedAt  DateTime @default(now())
   
   circle    Circle   @relation(fields: [circleId], references: [id])
@@ -113,4 +120,26 @@ model Location {
   
   user       User     @relation(fields: [userId], references: [id])
   journey    Journey? @relation(fields: [journeyId], references: [id])
+}
+
+model EmergencyContact {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  phone     String
+  relation  String?
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  circleId  String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+  
+  circle    Circle   @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }

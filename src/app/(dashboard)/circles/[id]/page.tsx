@@ -15,12 +15,15 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { CircleChat } from "@/components/circle/CircleChat";
 
 interface Member {
     id: string;
     userId: string;
     role: string;
     joinedAt: string;
+    shareLocation?: boolean;
     user: {
         id: string;
         name: string;
@@ -98,6 +101,35 @@ export default function CircleDetailPage() {
         } catch (error) {
             console.error("Error leaving circle:", error);
             toast.error("Failed to leave circle");
+        }
+    };
+
+    const handleToggleLocation = async (memberId: string, checked: boolean) => {
+        setCircle(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                members: prev.members.map(m => m.id === memberId ? { ...m, shareLocation: checked } : m)
+            };
+        });
+
+        try {
+            const res = await fetch(`/api/circles/${id}/share-location`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ shareLocation: checked }),
+            });
+            if (!res.ok) throw new Error("Failed to update");
+            toast.success(`Share Location ${checked ? 'enabled' : 'disabled'}`);
+        } catch (error) {
+            toast.error("Could not update sharing preferences");
+            setCircle(prev => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    members: prev.members.map(m => m.id === memberId ? { ...m, shareLocation: !checked } : m)
+                };
+            });
         }
     };
 
@@ -227,6 +259,15 @@ export default function CircleDetailPage() {
                                                 Admin
                                             </Badge>
                                         )}
+                                        {member.userId === user?.id && (
+                                            <div className="flex items-center gap-2 ml-2">
+                                                <span className="text-xs text-muted-foreground">Share Info</span>
+                                                <Switch
+                                                    checked={member.shareLocation ?? true}
+                                                    onCheckedChange={(checked) => handleToggleLocation(member.id, checked)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -235,14 +276,7 @@ export default function CircleDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Recent Activity</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">No recent activity.</p>
-                        </CardContent>
-                    </Card>
+                    <CircleChat circleId={circle.id} />
                 </div>
             </div>
         </div>

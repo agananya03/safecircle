@@ -11,6 +11,10 @@ const settingsNav = [
         href: "/account",
     },
     {
+        title: "Privacy Settings",
+        href: "/privacy-settings",
+    },
+    {
         title: "Appearance",
         href: "/appearance",
     },
@@ -25,6 +29,30 @@ const settingsNav = [
     {
         title: "Fake Call Settings",
         href: "/fake-call",
+    },
+    {
+        title: "Voice Commands",
+        href: "/voice-settings",
+    },
+    {
+        title: "Emergency Contacts",
+        href: "/emergency-contacts",
+    },
+    {
+        title: "Safety Tips",
+        href: "/safety-tips",
+    },
+    {
+        title: "Support",
+        href: "/support",
+    },
+    {
+        title: "Privacy Policy",
+        href: "/privacy",
+    },
+    {
+        title: "Terms of Service",
+        href: "/terms",
     },
 ]
 

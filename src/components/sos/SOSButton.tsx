@@ -139,6 +139,19 @@ export function SOSButton({
         }
     };
 
+    // Voice Command listener
+    useEffect(() => {
+        const handleVoiceTrigger = () => {
+            // We can skip countdown and go straight to triggering, or start countdown
+            triggerSOS();
+        };
+
+        window.addEventListener('voice-trigger-sos', handleVoiceTrigger);
+        return () => window.removeEventListener('voice-trigger-sos', handleVoiceTrigger);
+    }, [latitude, longitude, user]); // Dependencies required for triggerSOS to work
+
+
+
     const resolveSOS = async () => {
         if (!alertId) return;
 
