@@ -9,42 +9,42 @@ const features = [
         icon: <AlertCircle className="w-8 h-8 text-white" />,
         title: "One-Tap SOS Alert",
         description: "Send instant silent alerts to your trusted circles with your exact location. Help arrives faster when every second counts.",
-        link: "#",
+        link: "/sos",
         gradient: "from-pink-500 to-rose-500"
     },
     {
         icon: <Users className="w-8 h-8 text-white" />,
         title: "Your Safety Circles",
         description: "Create groups with friends, family, and neighbors. Share your safety status only with people you trust completely.",
-        link: "#",
+        link: "/dashboard/circles",
         gradient: "from-violet-500 to-purple-500"
     },
     {
         icon: <MapPin className="w-8 h-8 text-white" />,
         title: "Live Location Sharing",
         description: "Share your real-time location during emergencies. Your circle can see exactly where you are on the map.",
-        link: "#",
+        link: "/dashboard/map",
         gradient: "from-blue-500 to-indigo-500"
     },
     {
         icon: <Route className="w-8 h-8 text-white" />,
         title: "Journey Tracking",
         description: "Track your late-night commutes. Auto-alert your circle if you don't reach your destination on time.",
-        link: "#",
+        link: "/dashboard/journey",
         gradient: "from-emerald-500 to-teal-500"
     },
     {
         icon: <Clock className="w-8 h-8 text-white" />,
         title: "Smart Check-Ins",
         description: "Set safety check-ins. If you don't confirm by the deadline, automatic alerts notify your circle.",
-        link: "#",
+        link: "/dashboard/check-in",
         gradient: "from-amber-500 to-orange-500"
     },
     {
         icon: <PhoneIncoming className="w-8 h-8 text-white" />,
         title: "Fake Call Escape",
         description: "Generate realistic incoming calls to gracefully exit uncomfortable situations. Your secret escape plan.",
-        link: "#",
+        link: "/fake-call",
         gradient: "from-fuchsia-500 to-pink-500"
     }
 ];

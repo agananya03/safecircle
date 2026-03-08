@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 export function FloatingSosButton() {
     return (
-        <Link href="/login" className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 group">
+        <Link href="/sos" className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 group">
             <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
